@@ -14,68 +14,22 @@
 body{
   height:100vh;
   font-family:'Press Start 2P',cursive;
-  overflow:hidden;
   display:flex;
   justify-content:center;
   align-items:flex-start;
   padding-top:80px;
+  overflow:hidden;
+
+  /* GIF background */
+  background: url("background.gif") center center / cover no-repeat fixed;
 }
 
-/* Animated PNG Background */
-.bg,
-.palmSway,
-.cloudDrift{
-  position:fixed;
-  inset:0;
-  background:url("background.png") center/cover no-repeat;
-}
-
-.bg{ z-index:-3; }
-
-.bg::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    120deg,
-    rgba(255,255,255,0.05) 0%,
-    rgba(255,255,255,0.15) 50%,
-    rgba(255,255,255,0.05) 100%
-  );
-  mix-blend-mode:overlay;
-  animation:waterMove 6s linear infinite;
-}
-
-@keyframes waterMove{
-  from{transform:translateX(-100%)}
-  to{transform:translateX(100%)}
-}
-
-.palmSway{
-  z-index:-2;
-  animation:sway 8s ease-in-out infinite;
-  opacity:.12;
-}
-
-@keyframes sway{
-  0%,100%{transform:translateX(0px)}
-  50%{transform:translateX(6px)}
-}
-
-.cloudDrift{
-  z-index:-1;
-  animation:cloudMove 40s linear infinite;
-  opacity:.08;
-}
-
-@keyframes cloudMove{
-  from{transform:translateX(0)}
-  to{transform:translateX(-120px)}
-}
-
+/* Confetti canvas */
 #confettiCanvas{
   position:fixed;
   inset:0;
+  width:100vw;
+  height:100vh;
   pointer-events:none;
   z-index:1000;
 }
@@ -104,6 +58,11 @@ h1{
 .zone{
   position:relative;
   height:90px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:40px;
+  overflow:hidden;
 }
 
 button{
@@ -113,13 +72,28 @@ button{
   cursor:pointer;
   font-family:'Press Start 2P',cursive;
   box-shadow:4px 4px 0 #06263a;
+  transition:transform .15s ease;
   position:absolute;
 }
 
-#yesBtn{ left:30%; background:#e36414; color:#fff; }
-#noBtn{ left:55%; background:#9ad1d4; color:#06263a; }
+#yesBtn{
+  left:30%;
+  background:#e36414;
+  color:#fff;
+}
 
-.fineprint{ margin-top:18px; font-size:9px; color:#06263a; opacity:.85; }
+#noBtn{
+  left:55%;
+  background:#9ad1d4;
+  color:#06263a;
+}
+
+.fineprint{
+  margin-top:18px;
+  font-size:9px;
+  color:#06263a;
+  opacity:.85;
+}
 
 .result{
   display:none;
@@ -130,7 +104,9 @@ button{
   text-shadow:2px 2px 0 #06263a;
 }
 
-.party{ animation: medShift .7s infinite; }
+.party{
+  animation: medShift .7s infinite;
+}
 
 @keyframes medShift{
   0%{background:#e9c46a}
@@ -144,23 +120,23 @@ button{
 
 <body>
 
-<div class="bg"></div>
-<div class="palmSway"></div>
-<div class="cloudDrift"></div>
-
+<!-- Background audio (fixed) -->
 <audio id="bgMusic" loop>
-  <source src="p2p.mp3" type="audio/mp3">
+  <source src="p2p.mp3" type="audio/mpeg">
 </audio>
 
 <canvas id="confettiCanvas"></canvas>
 
 <div class="dialog" id="dialog">
   <h1 id="question">Harshita, will you be my valentine?</h1>
+
   <div class="zone" id="zone">
     <button id="yesBtn">YES</button>
     <button id="noBtn">No*</button>
   </div>
+
   <div class="fineprint" id="fineprint">*always the right answers(?)</div>
+
   <div class="result" id="result">
     A smart lady always exercises her free will, indeed. :p<br/><br/>
     I love you, doll!
@@ -168,29 +144,6 @@ button{
 </div>
 
 <script>
-const bgMusic=document.getElementById("bgMusic");
-function unlockAudio(){
-  bgMusic.play().catch(()=>{});
-  window.removeEventListener("click",unlockAudio);
-}
-window.addEventListener("click",unlockAudio);
-
-const canvas=document.getElementById("confettiCanvas");
-const confettiInstance=confetti.create(canvas,{resize:true,useWorker:true});
-
-function fireConfetti(){
-  const end=Date.now()+4000;
-  (function frame(){
-    confettiInstance({
-      particleCount:60,
-      spread:360,
-      startVelocity:70,
-      origin:{x:0.5,y:0.5}
-    });
-    if(Date.now()<end)requestAnimationFrame(frame);
-  })();
-}
-
 const zone=document.getElementById("zone");
 const yesBtn=document.getElementById("yesBtn");
 const noBtn=document.getElementById("noBtn");
@@ -199,6 +152,39 @@ const dialog=document.getElementById("dialog");
 const question=document.getElementById("question");
 const fineprint=document.getElementById("fineprint");
 
+const canvas=document.getElementById("confettiCanvas");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+const confettiInstance=confetti.create(canvas,{resize:true,useWorker:true});
+
+/* Unlock and start music on first user interaction */
+const bgMusic=document.getElementById("bgMusic");
+function startMusic(){
+  bgMusic.play().catch(()=>{});
+  window.removeEventListener("pointerdown",startMusic);
+}
+window.addEventListener("pointerdown",startMusic);
+
+/* Confetti from true center */
+function fireConfetti(){
+  const duration=4000;
+  const end=Date.now()+duration;
+
+  (function frame(){
+    confettiInstance({
+      particleCount:60,
+      spread:360,
+      startVelocity:70,
+      origin:{x:0.5,y:0.5}
+    });
+    if(Date.now()<end){
+      requestAnimationFrame(frame);
+    }
+  })();
+}
+
+/* YES grows */
 let scale=1;
 yesBtn.addEventListener("mouseenter",()=>{
   scale*=1.2;
@@ -208,13 +194,19 @@ yesBtn.addEventListener("mouseenter",()=>{
   yesBtn.style.zIndex="2000";
 });
 
+/* NO runs */
 zone.addEventListener("pointermove",e=>{
   const b=noBtn.getBoundingClientRect();
   const z=zone.getBoundingClientRect();
-  const dist=Math.hypot((b.left+b.width/2)-e.clientX,(b.top+b.height/2)-e.clientY);
+  const dist=Math.hypot(
+    (b.left+b.width/2)-e.clientX,
+    (b.top+b.height/2)-e.clientY
+  );
   if(dist<60){
-    noBtn.style.left=Math.random()*(z.width-b.width)+"px";
-    noBtn.style.top=Math.random()*(z.height-b.height)+"px";
+    let nl=Math.random()*(z.width-b.width);
+    let nt=Math.random()*(z.height-b.height);
+    noBtn.style.left=nl+"px";
+    noBtn.style.top=nt+"px";
   }
 });
 
